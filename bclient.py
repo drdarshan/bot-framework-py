@@ -12,7 +12,8 @@ class Conversation(object):
 
     def get_activities(self, index = -1):
         data = self.client._make_request("/v3/directline/conversations/{0}/activities".format(self.conv_id), method="GET")
-        return data["activities"][index]
+        activities = data["activities"]
+        return {} if activities == [] else activities[index]
 
     def post_activity(self, activity):
         import json
@@ -45,7 +46,10 @@ class Conversation(object):
         return self.post_activity(activity)
 
     def __str__(self):
-        return "Conversation ID: "+self.conversation_id
+        return "Conversation ID: "+self.conv_id
+
+    def __repr__(self):
+        return str(self)
 
 class Client(object):
     def _make_request(self, url, body=None, extra_headers=None, method="POST"):
@@ -58,7 +62,7 @@ class Client(object):
 
             conn.request(method, url, body, headers=headers)
             response = conn.getresponse()
-            print response.status, response.reason
+            # print response.status, response.reason
             r = response.read()
             assert response.status == 200 or response.status == 201
             return json.loads(r)
