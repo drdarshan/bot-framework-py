@@ -77,4 +77,5 @@ class Client(object):
 
     def start_conversation(self):
         data = self._make_request("/v3/directline/conversations")
+        print data
         return Conversation(self, data["conversationId"], self.user_id)
