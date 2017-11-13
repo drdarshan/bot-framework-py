@@ -1,26 +1,38 @@
 import httplib
 import json
 import urlparse
+import websocket
 from contextlib import closing
 
 DIRECTLINE_URL="https://directline.botframework.com/v3/directline"
 
 class Conversation(object):
-    def __init__(self, client, conv_id, user_id = "user1"):
+    def __init__(self, client, conv_id, websocket_uri, user_id = "user1"):
         self.client = client
         self.conv_id = conv_id
         self.user_id = user_id
+        self._init_websocket(websocket_uri)
+
+    def _init_websocket(self, websocket_uri):
+        self.websocket = websocket.WebSocket()
+        self.websocket.connect(websocket_uri)
 
     def get_activities(self, index = -1):
-        data = self.client._make_request("GET", "conversations/{0}/activities".format(self.conv_id))
+        data = json.loads(self.websocket.recv())
+        # data = self.client._make_request("GET", "conversations/{0}/activities".format(self.conv_id))
         activities = data["activities"]
         return {} if activities == [] else activities[index]
 
     def post_activity(self, activity):
-        data = self.client._make_request("POST", \
-                                         "conversations/{0}/activities".format(self.conv_id),\
-                                         json=activity)
-        return data["id"]
+        self.websocket.send(json.dumps(activity))
+        data = self.websocket.recv()
+        print data
+        return data
+        # data = json.loads(self.websocket.recv())
+        # # data = self.client._make_request("POST", \
+        # #                                  "conversations/{0}/activities".format(self.conv_id),\
+        # #                                  json=activity)
+        # return data["id"]
 
     def upload_image_file(self, file_path):
         import os
@@ -87,4 +99,4 @@ class Client(object):
     def start_conversation(self):
         data = self._make_request("POST", "conversations")
         print data
-        return Conversation(self, data["conversationId"], self.user_id)
+        return Conversation(self, data["conversationId"], data["streamUrl"], self.user_id)
